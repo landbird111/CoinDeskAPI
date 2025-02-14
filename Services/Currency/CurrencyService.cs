@@ -55,8 +55,7 @@ public class CurrencyService : ICurrencyService
                 CurrencyName = currencyName,
                 CurrencyShortName = currencyShortName,
                 CurrencyDescription = currencyDescription,
-                CurrencyInfo = currencyInfoExist ?? currencyInfo,
-
+                CurrencyInfo = currencyInfoNewId == -1 ? currencyInfoExist : currencyInfo
             };
 
             await _currencyProvider.AddCurrencyLangAsync(currencyLang).ConfigureAwait(false);

@@ -4,12 +4,18 @@ using CoinDeskAPI.Models.ViewModels.Currency;
 using CoinDeskAPI.Models.ViewModels.Prices;
 using CoinDeskAPI.Provider.Currency;
 using CoinDeskAPI.Services.Currency;
+using CoinDeskAPI.Validators.ViewModels.Currency;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//builder.Services.AddFluentValidation(config => config.RegisterValidatorsFromAssembly(Assembly.GetExecutingAssembly()));
+builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 
 builder.Services.AddHttpClient();
 
@@ -30,6 +36,7 @@ builder.Services.AddDbContext<CurrencyContext>(options =>
 builder.Services.AddLogging();
 
 // Register services as scoped
+builder.Services.AddScoped<IValidator<AddCurrencyViewModel>, AddCurrencyVMValidator>();
 builder.Services.AddScoped<ICurrencyProvider, CurrencyProvider>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
@@ -126,6 +133,12 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
     // 查詢指定貨幣的名稱
     app.MapGet("/QueryCurrencyName", async (ICurrencyService currencyService, string currencyCode) =>
     {
+        // 檢查貨幣代碼長度必須為3個字元
+        if (currencyCode.Length != 3)
+        {
+            return new ApiResponseViewModel(isOk: false, message: "貨幣代碼長度必須為3個字元");
+        }
+
         // 取得目前執行環境的語系名稱
         var currencyName = await currencyService.QueryCurrencyNameAsync(currencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false);
 
@@ -136,6 +149,12 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
     // 取得幣別資料清單
     app.MapGet("/QueryCurrencyInfos", async (ICurrencyService currencyService, string currencyCode) =>
     {
+        // 檢查貨幣代碼長度必須為3個字元
+        if (currencyCode.Length != 3)
+        {
+            return new ApiResponseViewModel(isOk: false, message: "貨幣代碼長度必須為3個字元");
+        }
+
         var currencyInfos = await currencyService.QueryCurrencyDataAsync(currencyCode).ConfigureAwait(false);
 
         return new ApiResponseViewModel<IEnumerable<CurrencyDataViewModel>>(isOk: currencyInfos.Any(), data: currencyInfos.Select(s => new CurrencyDataViewModel
@@ -154,6 +173,12 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
     // 取得目前語系的幣別資料
     app.MapGet("/QueryCurrencyInfo", async (ICurrencyService currencyService, string currencyCode) =>
     {
+        // 檢查貨幣代碼長度必須為3個字元
+        if (currencyCode.Length != 3)
+        {
+            return new ApiResponseViewModel(isOk: false, message: "貨幣代碼長度必須為3個字元");
+        }
+
         var currencyInfo = await currencyService.QueryCurrencyInfoAsync(currencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false);
 
         var hasCurrencyInfo = currencyInfo != null;
@@ -172,8 +197,16 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
         .WithOpenApi();
 
     // 新增幣別資料
-    app.MapPost("/AddNewCurrencyData", async (ICurrencyService currencyService, [FromBody] AddCurrencyViewModel addCurrency) =>
+    app.MapPost("/AddNewCurrencyData", async (ICurrencyService currencyService, IValidator<AddCurrencyViewModel> addCurrencyValidator, [FromBody] AddCurrencyViewModel addCurrency) =>
     {
+        // 驗證新增幣別資料
+        var validationResult = await addCurrencyValidator.ValidateAsync(addCurrency).ConfigureAwait(false);
+
+        if (!validationResult.IsValid)
+        {
+            return new ApiResponseViewModel(isOk: false, message: string.Join(",", validationResult.Errors.Select(s => s.ErrorMessage)));
+        }
+
         var addCurrencyResult = await currencyService.AddCurrencyDataAsync(
              addCurrency.CurrencyCode,
             CultureInfo.CurrentCulture.Name,
@@ -187,6 +220,12 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
 
     app.MapPut("/UpdateCurrencyShortName", async (ICurrencyService currencyService, string currencyCode, string currencyShortName) =>
     {
+        // 檢查貨幣代碼長度必須為3個字元
+        if (currencyCode.Length != 3)
+        {
+            return new ApiResponseViewModel(isOk: false, message: "貨幣代碼長度必須為3個字元");
+        }
+
         var updateShortNameResult = await currencyService.UpdateCurrencyShortNameAsync(currencyCode, CultureInfo.CurrentCulture.Name, currencyShortName).ConfigureAwait(false);
 
         return new ApiResponseViewModel(isOk: updateShortNameResult, message: updateShortNameResult ? "更新幣別簡稱成功" : "更新幣別簡稱失敗");
@@ -195,6 +234,12 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
 
     app.MapDelete("/DeleteCurrencyCode", async (ICurrencyService currencyService, string currencyCode) =>
     {
+        // 檢查貨幣代碼長度必須為3個字元
+        if (currencyCode.Length != 3)
+        {
+            return new ApiResponseViewModel(isOk: false, message: "貨幣代碼長度必須為3個字元");
+        }
+
         var deleteLangResult = await currencyService.DeleteCurrencyDataAsync(currencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false);
 
         return new ApiResponseViewModel(isOk: deleteLangResult, message: deleteLangResult ? "刪除幣別成功" : "刪除幣別失敗");
