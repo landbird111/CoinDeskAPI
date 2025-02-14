@@ -21,9 +21,17 @@ public class CurrencyProvider : ICurrencyProvider
     /// <returns>新增的幣別資訊Id</returns>
     public async Task<int> AddCurrencyInfoAsync(CurrencyInfo currencyInfo)
     {
-        await _currencyContext.CurrencyInfos.AddAsync(currencyInfo).ConfigureAwait(false);
+        // 從 CurrencyContext 的 CurrencyInfos 資料表中新增一筆幣別資訊
+        var addNewData = new CurrencyInfo
+        {
+            CurrencyCode = currencyInfo.CurrencyCode,
+            LastModifiedTime = currencyInfo.LastModifiedTime,
+            CurrencyLangs = currencyInfo.CurrencyLangs
+        };
+
+        await _currencyContext.CurrencyInfos.AddAsync(addNewData).ConfigureAwait(false);
         await _currencyContext.SaveChangesAsync().ConfigureAwait(false);
-        return currencyInfo.CurrencyInfoId;
+        return addNewData.CurrencyInfoId;
     }
 
     /// <summary>
@@ -75,6 +83,7 @@ public class CurrencyProvider : ICurrencyProvider
     public async Task AddCurrencyLangAsync(CurrencyLang currencyLang)
     {
         await _currencyContext.CurrencyLangs.AddAsync(currencyLang).ConfigureAwait(false);
+        await _currencyContext.SaveChangesAsync().ConfigureAwait(false);
     }
 
     /// <summary>

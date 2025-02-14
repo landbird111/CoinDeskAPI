@@ -4,6 +4,7 @@ using CoinDeskAPI.Models.ViewModels.Currency;
 using CoinDeskAPI.Models.ViewModels.Prices;
 using CoinDeskAPI.Provider.Currency;
 using CoinDeskAPI.Services.Currency;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Globalization;
@@ -117,6 +118,7 @@ WebApplication CallCoindeskPart(WebApplication app)
 
 WebApplication CallCurrencyCRUDPart(WebApplication app)
 {
+    // 查詢指定貨幣的名稱
     app.MapGet("/QueryCurrencyName", async (ICurrencyService currencyService, string currencyCode) =>
     {
         // 取得目前執行環境的語系名稱
@@ -165,14 +167,14 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
         .WithOpenApi();
 
     // 新增幣別資料
-    app.MapPost("/AddNewCurrencyData", async (ICurrencyService currencyService, string currencyCode, string fullCurrencyName, string shortCurrencyName, string currencyDesc = "") =>
+    app.MapPost("/AddNewCurrencyData", async (ICurrencyService currencyService, [FromBody] AddCurrencyViewModel addCurrency) =>
     {
         var addCurrencyResult = await currencyService.AddCurrencyDataAsync(
-            currencyCode,
+             addCurrency.CurrencyCode,
             CultureInfo.CurrentCulture.Name,
-            fullCurrencyName,
-            shortCurrencyName,
-            currencyDesc).ConfigureAwait(false);
+            addCurrency.FullCurrencyName,
+            addCurrency.ShortCurrencyName,
+            addCurrency.CurrencyDesc).ConfigureAwait(false);
 
         return new ApiResponseViewModel(isOk: addCurrencyResult, message: addCurrencyResult ? "新增幣別成功" : "新增幣別失敗");
     }).WithName("AddNewCurrencyData")

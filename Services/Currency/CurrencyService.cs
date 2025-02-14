@@ -37,7 +37,9 @@ public class CurrencyService : ICurrencyService
 
             var currencyInfo = new CurrencyInfo
             {
-                CurrencyCode = currencyCode
+                CurrencyCode = currencyCode,
+                LastModifiedTime = DateTime.Now,
+                CurrencyLangs = new List<CurrencyLang>()
             };
 
             if (currencyInfoExist == null)
@@ -53,7 +55,8 @@ public class CurrencyService : ICurrencyService
                 CurrencyName = currencyName,
                 CurrencyShortName = currencyShortName,
                 CurrencyDescription = currencyDescription,
-                CurrencyInfo = currencyInfoExist ?? currencyInfo
+                CurrencyInfo = currencyInfoExist ?? currencyInfo,
+
             };
 
             await _currencyProvider.AddCurrencyLangAsync(currencyLang).ConfigureAwait(false);
