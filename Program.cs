@@ -104,18 +104,22 @@ WebApplication CallCoindeskPart(WebApplication app)
                 UpdateTimeUK = ConvertUpdateTimeFormat(bpiCurrentPrice.TimeInfo.UpdateTimeUTCDateTime)
             };
 
+            // 轉換幣別名稱
+            Func<string, string> ConvertCurrencyName = (string currencyCode) => currencyService.QueryCurrencyNameAsync(currencyCode, CultureInfo.CurrentCulture.Name).GetAwaiter().GetResult();
+
             // 將條列式的Currency轉換為List
             var currencyInfos =
             bpiCurrentPrice.Bpi.GetType().GetProperties()
             .Where(p => p.PropertyType == typeof(CurrencyInformation))
             .Select(p => p.GetValue(bpiCurrentPrice.Bpi) as CurrencyInformation)
-            .Select(async s => new
+            .Select(s => new
             {
-                CurrencyCode = s?.CurrencyCode,
+                CurrencyCode = s.CurrencyCode,
                 // 取得幣別名稱的方式，最佳應透過快取機制，避免重複查詢
-                CurrencyName = await currencyService.QueryCurrencyNameAsync(s.CurrencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false),
-                CurrencyRate = s?.CurrencyRate
-            });
+                CurrencyName = ConvertCurrencyName(s.CurrencyCode),
+                CurrencyRate = s.CurrencyRate
+            })
+            .OrderBy(x => x.CurrencyCode);
 
             return new ApiResponseViewModel<object>(isOk: true, data: new { UpdateTimes = updateTimeSection, CurrencyInfos = currencyInfos });
         }
