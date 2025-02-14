@@ -57,7 +57,7 @@ app.Run();
 
 WebApplication CallCoindeskPart(WebApplication app)
 {
-    app.MapGet("/QueryCoindesk", async () =>
+    app.MapGet("/QueryCoindesk", async (ICurrencyService currencyService) =>
     {
         try
         {
@@ -99,9 +99,14 @@ WebApplication CallCoindeskPart(WebApplication app)
 
             // 將條列式的Currency轉換為List
             var currencyInfos = bpiCurrentPrice.Bpi.GetType().GetProperties()
-                .Where(p => p.PropertyType == typeof(CurrencyInformation))
-                .Select(p => p.GetValue(bpiCurrentPrice.Bpi) as CurrencyInformation)
-                .Select(s => new { CurrencyCode = s?.CurrencyCode, CurrencyRate = s?.CurrencyRate });
+                                                   .Where(p => p.PropertyType == typeof(CurrencyInformation))
+                                                   .Select(p => p.GetValue(bpiCurrentPrice.Bpi) as CurrencyInformation)
+                                                   .Select(async s => new
+                                                   {
+                                                       CurrencyCode = s?.CurrencyCode,
+                                                       CurrencyName = await currencyService.QueryCurrencyNameAsync(s.CurrencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false),
+                                                       CurrencyRate = s?.CurrencyRate
+                                                   });
 
             return new ApiResponseViewModel<object>(isOk: true, data: new { UpdateTimes = updateTimeSection, CurrencyInfos = currencyInfos });
         }
