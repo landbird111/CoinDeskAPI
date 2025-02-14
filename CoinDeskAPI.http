@@ -1,0 +1,6 @@
+@CoinDeskAPI_HostAddress = http://localhost:5023
+
+GET {{CoinDeskAPI_HostAddress}}/QueryCoindesk/
+Accept: application/json
+
+###
