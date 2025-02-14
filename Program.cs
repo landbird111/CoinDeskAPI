@@ -105,15 +105,17 @@ WebApplication CallCoindeskPart(WebApplication app)
             };
 
             // 將條列式的Currency轉換為List
-            var currencyInfos = bpiCurrentPrice.Bpi.GetType().GetProperties()
-                                                   .Where(p => p.PropertyType == typeof(CurrencyInformation))
-                                                   .Select(p => p.GetValue(bpiCurrentPrice.Bpi) as CurrencyInformation)
-                                                   .Select(async s => new
-                                                   {
-                                                       CurrencyCode = s?.CurrencyCode,
-                                                       CurrencyName = await currencyService.QueryCurrencyNameAsync(s.CurrencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false),
-                                                       CurrencyRate = s?.CurrencyRate
-                                                   });
+            var currencyInfos =
+            bpiCurrentPrice.Bpi.GetType().GetProperties()
+            .Where(p => p.PropertyType == typeof(CurrencyInformation))
+            .Select(p => p.GetValue(bpiCurrentPrice.Bpi) as CurrencyInformation)
+            .Select(async s => new
+            {
+                CurrencyCode = s?.CurrencyCode,
+                // 取得幣別名稱的方式，最佳應透過快取機制，避免重複查詢
+                CurrencyName = await currencyService.QueryCurrencyNameAsync(s.CurrencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false),
+                CurrencyRate = s?.CurrencyRate
+            });
 
             return new ApiResponseViewModel<object>(isOk: true, data: new { UpdateTimes = updateTimeSection, CurrencyInfos = currencyInfos });
         }
