@@ -15,6 +15,8 @@
 
 3. 用了Dependency Injection的方式來管理物件的生命週期
 4. 資料庫使用了Entity Framework Core (LocalDB)
+5. 多語系的部份，我使用了CultureInfo.CurrentCulture.Name來取得語系，並且將語系的資料表分開，成了主從式表格
+    - 一般來說是用資源檔來做多語系的處理，但我覺得這樣的方式比較直覺，也比較容易維護
 
 ## Error Handling部份
 
