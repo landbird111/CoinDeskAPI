@@ -15,8 +15,13 @@
 
 3. 用了Dependency Injection的方式來管理物件的生命週期
 4. 資料庫使用了Entity Framework Core (LocalDB)
-5. 多語系的部份，我使用了CultureInfo.CurrentCulture.Name來取得語系，並且將語系的資料表分開，成了主從式表格
-    - 一般來說是用資源檔來做多語系的處理，但我覺得這樣的方式比較直覺，也比較容易維護
+5. 多語系的部份，我使用了CultureInfo.CurrentCulture.Name來取得語系，並且實作了兩種寫法(皆實作在Service層)
+	- 第一種是資料表
+	    - 我開發了語系的資料表，將幣別和語系檔建成了主從式表格
+		- 我覺得這樣的方式比較直覺，也比較容易維護(像是開發UI進行管理、比對、更新等等)
+		- 在QueryCoindesk的API裡可以看到，Method名稱為ConvertCurrencyNameByDB
+    - 第二種是資源檔
+	    - 我實作了多語系的Resx檔，在QueryCoindesk的API裡可以看到，Method名稱為ConvertCurrencyNameByResx
 
 ## Error Handling部份
 

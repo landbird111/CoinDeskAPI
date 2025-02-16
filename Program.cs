@@ -17,6 +17,9 @@ var builder = WebApplication.CreateBuilder(args);
 //builder.Services.AddFluentValidation(config => config.RegisterValidatorsFromAssembly(Assembly.GetExecutingAssembly()));
 builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 
+// 增加多語系支援
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
 builder.Services.AddHttpClient();
 
 var httpClient = new CommonHttpClient(new HttpClientCore(builder.Services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>()));
@@ -104,10 +107,12 @@ WebApplication CallCoindeskPart(WebApplication app)
                 UpdateTimeUK = ConvertUpdateTimeFormat(bpiCurrentPrice.TimeInfo.UpdateTimeUTCDateTime)
             };
 
-            // 轉換幣別名稱
-            Func<string, string> ConvertCurrencyName = (string currencyCode) => currencyService.QueryCurrencyNameAsync(currencyCode, CultureInfo.CurrentCulture.Name).GetAwaiter().GetResult();
+            // 轉換幣別名稱，使用資料庫的方式
+            Func<string, string> ConvertCurrencyNameByDB = (string currencyCode) => currencyService.QueryCurrencyNameAsync(currencyCode, CultureInfo.CurrentCulture.Name).GetAwaiter().GetResult();
+            // 第二種: 多語系檔案的轉換方式
+            Func<string, string> ConvertCurrencyNameByResx = (string currencyCode) => currencyService.GetCurrencyNameByResource(currencyCode, CultureInfo.CurrentCulture.Name);
 
-            // 將條列式的Currency轉換為List
+            // 將條列式的Currency轉換為List(並依幣別代碼排序)
             var currencyInfos =
             bpiCurrentPrice.Bpi.GetType().GetProperties()
             .Where(p => p.PropertyType == typeof(CurrencyInformation))
@@ -116,7 +121,9 @@ WebApplication CallCoindeskPart(WebApplication app)
             {
                 CurrencyCode = s.CurrencyCode,
                 // 取得幣別名稱的方式，最佳應透過快取機制，避免重複查詢
-                CurrencyName = ConvertCurrencyName(s.CurrencyCode),
+                //CurrencyName = ConvertCurrencyNameByDB(s.CurrencyCode),
+                // 使用多語系檔案的轉換方式
+                CurrencyName = ConvertCurrencyNameByResx(s.CurrencyCode),
                 CurrencyRate = s.CurrencyRate
             })
             .OrderBy(x => x.CurrencyCode);

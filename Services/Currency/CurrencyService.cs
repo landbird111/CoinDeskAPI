@@ -1,6 +1,8 @@
 ﻿using CoinDeskAPI.Models.DataLayerModels.Currency;
 using CoinDeskAPI.Models.ServiceModels.Currency;
 using CoinDeskAPI.Provider.Currency;
+using System.Globalization;
+using System.Resources;
 
 namespace CoinDeskAPI.Services.Currency;
 
@@ -120,7 +122,30 @@ public class CurrencyService : ICurrencyService
         catch (Exception ex)
         {
             _logger.LogError("{0}-{1}", nameof(QueryCurrencyNameAsync), ex.Message);
-            return string.Empty;
+            return currencyCode;
+        }
+    }
+
+    /// <summary>
+    /// 查詢幣別(使用語系檔)
+    /// </summary>
+    /// <param name="currencyCode">幣別代碼</param>
+    /// <param name="langKey">語系代碼</param>
+    /// <returns>幣別名稱</returns>
+    public string GetCurrencyNameByResource(string currencyCode, string langKey)
+    {
+        try
+        {
+            _logger.LogInformation("{0}-{1},{2}", nameof(GetCurrencyNameByResource), currencyCode, langKey);
+
+            var resourceManager = new ResourceManager($"{typeof(CurrencyService).Assembly.GetName().Name}.Resources.Currency", typeof(CurrencyService).Assembly);
+
+            return resourceManager.GetString(currencyCode, CultureInfo.GetCultureInfo(langKey)) ?? currencyCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{0}-{1}", nameof(GetCurrencyNameByResource), ex.Message);
+            return currencyCode;
         }
     }
 

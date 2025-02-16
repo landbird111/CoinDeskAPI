@@ -42,6 +42,14 @@ public interface ICurrencyService
     Task<string> QueryCurrencyNameAsync(string currencyCode, string langKey);
 
     /// <summary>
+    /// 查詢幣別(使用語系檔)
+    /// </summary>
+    /// <param name="currencyCode">幣別代碼</param>
+    /// <param name="langKey">語系代碼</param>
+    /// <returns>幣別名稱</returns>
+    string GetCurrencyNameByResource(string currencyCode, string langKey);
+
+    /// <summary>
     /// 更新幣別名稱
     /// </summary>
     /// <param name="currencyCode">幣別代碼</param>
