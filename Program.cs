@@ -20,6 +20,9 @@ builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsi
 // 增加多語系支援
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
+// 增加MemoryCache
+builder.Services.AddMemoryCache();
+
 builder.Services.AddHttpClient();
 
 var httpClient = new CommonHttpClient(new HttpClientCore(builder.Services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>()));
@@ -42,6 +45,9 @@ builder.Services.AddLogging();
 builder.Services.AddScoped<IValidator<AddCurrencyViewModel>, AddCurrencyVMValidator>();
 builder.Services.AddScoped<ICurrencyProvider, CurrencyProvider>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+
+// Register CacheFactory
+builder.Services.AddSingleton<CacheFactory>();
 
 var app = builder.Build();
 
@@ -184,7 +190,7 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
         .WithOpenApi();
 
     // 取得目前語系的幣別資料
-    app.MapGet("/QueryCurrencyInfo", async (ICurrencyService currencyService, string currencyCode) =>
+    app.MapGet("/QueryCurrencyInfo", async (ICurrencyService currencyService, CacheFactory cacheFactory, string currencyCode) =>
     {
         // 檢查貨幣代碼長度必須為3個字元
         if (currencyCode.Length != 3)
@@ -192,7 +198,8 @@ WebApplication CallCurrencyCRUDPart(WebApplication app)
             return new ApiResponseViewModel(isOk: false, message: "貨幣代碼長度必須為3個字元");
         }
 
-        var currencyInfo = await currencyService.QueryCurrencyInfoAsync(currencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false);
+        // 使用快取機制來儲存資料
+        var currencyInfo = await cacheFactory.CurrencyGetOrAddAsync(currencyCode, async () => await currencyService.QueryCurrencyInfoAsync(currencyCode, CultureInfo.CurrentCulture.Name).ConfigureAwait(false)).ConfigureAwait(false);
 
         var hasCurrencyInfo = currencyInfo != null;
 
