@@ -1,8 +1,10 @@
 using CoinDeskAPI.Helper;
 using CoinDeskAPI.Models.ViewModels;
+using CoinDeskAPI.Models.ViewModels.AESEncryption;
 using CoinDeskAPI.Models.ViewModels.Currency;
 using CoinDeskAPI.Models.ViewModels.Prices;
 using CoinDeskAPI.Provider.Currency;
+using CoinDeskAPI.Services.AESEncryption;
 using CoinDeskAPI.Services.Currency;
 using CoinDeskAPI.Validators.ViewModels.Currency;
 using FluentValidation;
@@ -49,6 +51,9 @@ builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 // Register CacheFactory
 builder.Services.AddSingleton<CacheFactory>();
 
+// 註冊AES加解密服務
+builder.Services.AddScoped<IAesEncryptionService, AesEncryptionService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -68,6 +73,9 @@ app = CallCoindeskPart(app);
 
 // 建立幣別的CRUD API
 app = CallCurrencyCRUDPart(app);
+
+// 設定AES加解密API
+app = SetAESEncryptionPart(app);
 
 app.Run();
 
@@ -310,6 +318,39 @@ WebApplication SetMonkDataPart(WebApplication app)
         """);
     }).WithName("MonkGetBpiPriceData")
         .WithOpenApi();
+
+    return app;
+}
+
+WebApplication SetAESEncryptionPart(WebApplication app)
+{
+    app.MapPost("/AESEncrypt", (IAesEncryptionService aesEncryptionService, [FromBody] EncryptRequest request) =>
+    {
+        try
+        {
+            var encryptedText = aesEncryptionService.Encrypt(request.PlainText);
+            return Results.Ok(new ApiResponseViewModel<string>(isOk: true, data: encryptedText));
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }).WithName("AESEncrypt")
+          .WithOpenApi();
+
+    app.MapPost("/AESDecrypt", (IAesEncryptionService aesEncryptionService, [FromBody] DecryptRequest request) =>
+    {
+        try
+        {
+            var decryptedText = aesEncryptionService.Decrypt(request.CipherText);
+            return Results.Ok(new ApiResponseViewModel<string>(isOk: true, data: decryptedText));
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }).WithName("AESDecrypt")
+      .WithOpenApi();
 
     return app;
 }

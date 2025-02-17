@@ -27,6 +27,9 @@
 	- 但匯率是有時效性的，所以我會將匯率的資料快取起來，並且設定一個時間(目前設為30秒)，超過時間就重新查詢
 	- 快取的建置，我使用MemoryCache
 	- 實作在QueryCurrencyInfo的這支API裡
+7. 實作AES加解密的功能
+	- 做了一個簡單的加解密的功能，實作在Service層的AesEncryptionService裡
+	- 可以再抽一層出來，實作不同的加解密演算法，這樣就可以達到策略模式的效果
 
 ## Error Handling部份
 
